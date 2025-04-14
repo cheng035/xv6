@@ -9,22 +9,27 @@ main(int argc, char *argv[])
   int p[2];
   pipe(p);
   int pid = fork();
-  char buf[1];
-  char b;
-  if(pid > 0){ //child
-     b = read(p[0],buf,1);
-     close(p[1]);
-     fprintf(3, "%d: received ping\n", pid);
-     write(1, b, p[1])
+  char buf[1] = {'a'};
+
+
+  if(pid == 0){ //child
+     pid = getpid();
+     read(p[0],buf,1);
      close(p[0]);
+     fprintf(2, "%d: received ping\n", pid);
+     write(p[1], buf, 1);
+     close(p[1]);
      exit(0);
-  }else{
+
+  }else{ // parent
     pid = getpid();
-    write(1, 'a', p[1])
-    close(p[0]);
-    b = read(p[0],buf,1);
-    fprintf(3, "%d: received pong\n", pid);
+    write(p[1], buf, 1);
     close(p[1]);
+
+    read(p[0],buf,1);
+    close(p[0]);
+    fprintf(2, "%d: received pong\n", pid);
+
   }
 
 }
