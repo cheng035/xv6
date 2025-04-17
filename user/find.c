@@ -3,23 +3,31 @@
 #include "user/user.h"
 #include "kernel/fs.h"
 
-char*
-fmtname(char *path)
-{
-  static char buf[DIRSIZ+1];
-  char *p;
-
-  // 找到最后一个 '/' 后的名字
-  for(p=path+strlen(path); p >= path && *p != '/'; p--)
-    ;
-  p++;
-
-  if(strlen(p) >= DIRSIZ)
-    return p;
-  memmove(buf, p, strlen(p));
-  memset(buf+strlen(p), ' ', DIRSIZ-strlen(p));
-  return buf;
+// get the base name from a path
+char* basename(char *path){
+  char *p = path + strlen(path);
+  while (p >= path && *p != '/'){
+    p--;
+  }
+  return p+1;
 }
+
+char* clean_name(char *fileName){
+  static char p[DIRSIZ + 1];
+  memmove(p, fileName, DIRSIZ);
+  p[DIRSIZ] = 0;
+  for (int i = DIRSIZ-1; i >= 0; i--){
+    if(p[i] == ' '){
+      p[i] = 0;
+    }
+    else{
+    break;
+    }
+  }
+  return p;
+}
+
+
 
 
 void
@@ -28,18 +36,24 @@ find(char *path, char *fileName){
     int fd;
     struct dirent de;
     struct stat st;
-    if(strcmp(fmtname(path), fileName) == 0){
-         printf("%s\n", path);
-    }
-    if((fd = open(path, 0)) < 0){
-       return;
-     }
 
-     if(fstat(fd, &st) < 0){
-        fprintf(2, "ls: cannot stat %s\n", path);
-        close(fd);
-        return;
-      }
+if(strcmp(basename(path), fileName) == 0){
+    printf("%s\n", path);
+}
+
+if((fd = open(path, 0)) < 0){
+    close(fd);
+    return;
+}
+if(fstat(fd, &st) < 0){
+    close(fd);
+    return;
+}
+
+if(st.type != T_DIR){
+    close(fd);
+    return;
+}
 
      if(st.type == T_DIR) {
           if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
@@ -53,8 +67,10 @@ find(char *path, char *fileName){
             if(de.inum == 0 || strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0){
               continue;
             }
-            memmove(p, de.name, DIRSIZ);
-            p[DIRSIZ] = 0;
+            char *name = clean_name(de.name);
+            int len = strlen(name);
+            memmove(p, name, len);
+            p[len] = 0;
             find(buf,fileName);
           }
           close(fd);
@@ -69,7 +85,7 @@ main(int argc, char *argv[])
     printf("wrong parameter");
     exit(1);
   }
-  find(argv[1], fmtname(argv[2]));
+  find(argv[1], argv[2]);
   exit(0);
 }
 
