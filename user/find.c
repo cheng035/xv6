@@ -12,23 +12,6 @@ char* basename(char *path){
   return p+1;
 }
 
-char* clean_name(char *fileName){
-  static char p[DIRSIZ + 1];
-  memmove(p, fileName, DIRSIZ);
-  p[DIRSIZ] = 0;
-  for (int i = DIRSIZ-1; i >= 0; i--){
-    if(p[i] == ' '){
-      p[i] = 0;
-    }
-    else{
-    break;
-    }
-  }
-  return p;
-}
-
-
-
 
 void
 find(char *path, char *fileName){
@@ -49,12 +32,6 @@ if(fstat(fd, &st) < 0){
     close(fd);
     return;
 }
-
-if(st.type != T_DIR){
-    close(fd);
-    return;
-}
-
      if(st.type == T_DIR) {
           if(strlen(path) + 1 + DIRSIZ + 1 > sizeof buf){
             printf("ls: path too long\n");
@@ -62,20 +39,18 @@ if(st.type != T_DIR){
           strcpy(buf, path);
           p = buf+strlen(buf);
           *p++ = '/';
-
           while(read(fd, &de, sizeof(de)) == sizeof(de)){
             if(de.inum == 0 || strcmp(de.name, ".") == 0 || strcmp(de.name, "..") == 0){
               continue;
             }
-            char *name = clean_name(de.name);
-            int len = strlen(name);
-            memmove(p, name, len);
+            int len = strlen(de.name);
+            memmove(p, de.name, len);
             p[len] = 0;
             find(buf,fileName);
           }
-          close(fd);
-
      }
+
+     close(fd);
 }
 
 int
