@@ -8,6 +8,10 @@ int main(int argc, char *argv[])
 
 {
 
+  if (argc>MAXARG){
+    fprintf(3,"wrong two many agrs");
+  }
+
   char *child_argv[20]; // store the previous argv.
   char *p;
   char buf[MAX_SIZE];
