@@ -68,24 +68,5 @@ int main(int argc, char *argv[])
       }
     }
   }
-
-  // handle the error at last
-  if (pointer > anchor)
-  {
-    child_argv[pointer] = 0;
-    int pid = fork();
-    if (pid == 0)
-    { // child
-      fprintf(1,"1exec123,%s", child_argv[1]);
-      exec(argv[1], child_argv);
-      exit(0);
-    }
-    else
-    {
-      wait(0);
-      // to do reset child_argv
-      pointer = anchor;
-    }
-  }
   exit(0);
 }
