@@ -1,4 +1,3 @@
-
 #include "kernel/types.h"
 #include "kernel/stat.h"
 #include "user/user.h"
@@ -21,8 +20,9 @@ int main(int argc, char *argv[])
   }
 
   char *child_argv[20]; // store the previous argv.
-  char buf[MAX_SIZE];
-  // c
+  char buf[MAX_SIZE]; // use this buf to read
+  char command_buf[MAX_SIZE]; // store the buf.
+  int command_pointer = 0;
   int pointer; // record the inital pointer here
   for (pointer = 0; pointer < argc - 1; pointer++)
   {
@@ -34,20 +34,20 @@ int main(int argc, char *argv[])
   int n;
   while ((n = read(0, buf, sizeof(buf))) > 0)
   {
-
     for (int i = 0; i < n; i++)
     {
       char c = buf[i];
       if (c != ' ' && c != '\n')
       {
-        continue;
+        command_buf[command_pointer++] = c;
       }
 
       else 
       {
-        buf[i] = '\0';
-        child_argv[pointer++] = &buf[previous_start];
-        previous_start = i + 1;
+        // \0 means the end of a string, here we use \0 to split string in the buffer.
+        command_buf[command_pointer] = '\0'; 
+        child_argv[pointer++] = &command_buf[previous_start];
+        previous_start = command_pointer + 1;
       }
 
       if (c == '\n')
@@ -62,11 +62,28 @@ int main(int argc, char *argv[])
         else
         {
           wait(0);
+          memset(command_buf, 0, sizeof(command_buf));
+          command_pointer = 0;
+          previous_start = 0;
           // to do reset child_argv
-          pointer = anchor;
+          while (pointer > anchor) {
+            child_argv[--pointer] = 0;
+        }
         }
       }
     }
   }
+
+if (pointer > anchor) {
+  command_buf[n] = '\0';
+  child_argv[pointer++] = &command_buf[previous_start];
+  child_argv[pointer] = 0;
+  if (fork() == 0) {
+    exec(argv[1], child_argv);
+    exit(0);
+  } else {
+    wait(0);
+  }
+}
   exit(0);
 }
